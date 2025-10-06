@@ -40,7 +40,7 @@ public class SpiderBehavior : MonoBehaviour
     //timer that'll count down for hunger
     float hungerTime;
     //hunger stat
-    float hungerVal = 5;
+    float hungerVal = 5000;
 
     //list for food currently in the scene
     List<GameObject> allFood = new List<GameObject>();
@@ -82,25 +82,43 @@ public class SpiderBehavior : MonoBehaviour
 
     void RunIdle()
     {
+        StepNeeds();
+        if (hungerVal <= 0)
+        {
+            target = null;
+            // state = SpiderStates.eating;
+            Debug.Log("hungryyyy switching to eating state");
+            return;
+        }
+
+        Transform previousTarget = target;
+
         if (target == null)
         { //if we do not have a target to move to
-            int newTarget = Random.Range(0, possibleTargets.Length); //find random position
-            target = possibleTargets[newTarget]; //set target to that position
-            startPos = transform.position; //set our starting pos to our current pos
-            lerpTime = 0; //reset our lerp progress
+            Transform newTarget = null;
+
+            do
+            {
+                newTarget = possibleTargets[Random.Range(0, possibleTargets.Length)];
+            }
+            while (newTarget == previousTarget);
+
+            target = newTarget;
+            startPos = transform.position; 
+            lerpTime = 0;
         }
         else
         {
             transform.position = Move(); //move to that position
+
+            // check if the two objects collide 
+            float distance = Vector3.Distance(transform.position, target.position);
+            if (distance < 0.05f)
+            {
+                target = null;
+                Debug.Log("target reached, look for new target now");
+            }
         }
-        StepNeeds(); //increment stat timers
-        if (hungerVal <= 0)
-        { //if our spider is hunger
-            target = null; //remove whatever target we were moving towards
-            //state = SpiderStates.eating; //switch the state to eating
-        }
-        //TO DO: find better thing to do while idle
-        //Need to make all behavior be intentional
     }
 
     void RunEat()
@@ -144,6 +162,12 @@ public class SpiderBehavior : MonoBehaviour
         allFood.AddRange(GameObject.FindGameObjectsWithTag("food")); //find all objs tagged food and put them in a list
     }
 
+    void ResetTarget()
+    {
+        target = null;
+        Debug.Log("target has been reset");
+    }
+
     Transform FindNearest(List<GameObject> objsToFind)
     {
         float minDist = Mathf.Infinity; //setting the min dist to a big number
@@ -161,12 +185,22 @@ public class SpiderBehavior : MonoBehaviour
     }
 
     Vector3 Move()
-    {
+    { 
         lerpTime += Time.deltaTime; //increase progress by delta time (time b/t frames)
         float percent = idleWalkCurve.Evaluate(lerpTime / lerpTimeMax); //from progress on curve
         Vector3 newPos = Vector3.LerpUnclamped(startPos, target.position, percent); //find current lerped position
+
+        Vector3 direction = target.position - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude > 0.001f)
+        {
+            Quaternion lookRotation = Quaternion.LookRotation(direction, Vector3.up);
+            lookRotation *= Quaternion.Euler(0f, -90f, 0f); // -90f because the model is on default facing right 
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, percent); // Quaternion.Slerp is basically lerp for rotation (spherical lerp)
+        }
         return newPos; //return the new position
     }
+
 
     void OnTriggerEnter2D(Collider2D col)
     {
