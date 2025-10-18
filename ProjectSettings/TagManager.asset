@@ -5,14 +5,21 @@ TagManager:
   serializedVersion: 3
   tags:
   - food
+  - IgnorePost
+  - Seagull
+  - Whale
+  - SeagullTarget
+  - Island
+  - SeagullDiveTarget
+  - SeagullDeathTarget
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Creature
   - Water
   - UI
-  - 
+  - Ignore Post
   - 
   - 
   - 
