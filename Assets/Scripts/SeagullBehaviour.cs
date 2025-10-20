@@ -170,7 +170,7 @@ public class SeagullBehaviour : MonoBehaviour
         // Diving phase — move toward food
         if (!returningToSky)
         {
-            transform.position = Move();
+            transform.position = Move(1f);
 
             if (touchingObj != null && touchingObj.CompareTag("SeagullDiveTarget"))
             {
@@ -200,7 +200,7 @@ public class SeagullBehaviour : MonoBehaviour
         if (returningToSky && target != null)
         {
 
-            transform.position = Move();
+            transform.position = Move(1f);
 
             if (Vector3.Distance(transform.position, target.position) < 0.05f)
             {
@@ -293,6 +293,23 @@ public class SeagullBehaviour : MonoBehaviour
     {
         lerpTime += Time.deltaTime; //increase progress by delta time
         float percent = idleWalkCurve.Evaluate(lerpTime / lerpTimeMax); //from progress on curve
+        Vector3 newPos = Vector3.LerpUnclamped(startPos, target.position, percent); //find current lerped position
+
+        Vector3 direction = target.position - transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude > 0.001f)
+        {
+            Quaternion lookRotation = Quaternion.LookRotation(direction, Vector3.up);
+            lookRotation *= Quaternion.Euler(0f, -90f, 0f); // -90f because the model is on default facing right 
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, percent); // Quaternion.Slerp is basically lerp for rotation (spherical lerp)
+        }
+        return newPos; //return the new position
+    }
+
+    Vector3 Move(float speed) //// overloaded function specifically for the seaagull dive
+    {
+        lerpTime += Time.deltaTime; //increase progress by delta time
+        float percent = idleWalkCurve.Evaluate(lerpTime / speed); //from progress on curve
         Vector3 newPos = Vector3.LerpUnclamped(startPos, target.position, percent); //find current lerped position
 
         Vector3 direction = target.position - transform.position;
